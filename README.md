@@ -66,13 +66,13 @@
   RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 실습할 수 있도록 구서
   <br>
   <br>
-  
 
+  
 ### 2. 데이터 분석
 
-<img width="336" height="612" alt="스크린샷 2025-07-11 191115" src="https://github.com/user-attachments/assets/197f2f67-80c0-40ce-a49d-9fe8bf69c84f" />
-
-<br>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/197f2f67-80c0-40ce-a49d-9fe8bf69c84f" width="336" height="612" />
+</p>
 
 #### - 주요 컬럼 분석
 
