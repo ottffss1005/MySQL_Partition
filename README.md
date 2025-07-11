@@ -1,4 +1,4 @@
-<img width="347" height="621" alt="image" src="https://github.com/user-attachments/assets/28609e5a-f5bf-4654-aa63-af74815b2d07" />#  스포티파이 트랙 데이터를 활용한 Partition Project
+#  스포티파이 트랙 데이터를 활용한 Partition Project
 
 <br>
 
@@ -70,11 +70,30 @@
   
 ### 2. 데이터 분석
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/197f2f67-80c0-40ce-a49d-9fe8bf69c84f" width="336" height="612" />
-</p>
+<table>
+  <tr>
+    <td>
+      <img width="332" height="612" alt="Image" src="https://github.com/user-attachments/assets/952a5062-103b-4013-9c6e-60c778011955" />
+    </td>
+    <td style="vertical-align: top; padding-left: 20px;">
+      
+      <strong> 주요 컬럼 분석 </strong><br> <br>
 
-#### - 주요 컬럼 분석
+      <strong> popularity : </strong> 점수별 곡 개수  <br>
+          0~100의 값 다양성 : 구간 나누기 최적 컬럼  <br> <br>
+      
+      <strong> tack_genre : </strong> 곡 장르  <br>
+      문자형 컬럼이지만 값이 일정 범위이며  <br> 
+          범주형 데이터로 그룹화에 적합  <br> <br>
+      
+      <strong> explicit : </strong> 욕설 포함 여부  <br>
+      분포는 단순하지만 휴해 콘텐츠 필터링 등의 <br> 
+          실용적 목적이 분명해 서브파티션에 적합  <br> <br>
+      
+      <br>
+    </td>
+  </tr>
+</table>
 
 
 
