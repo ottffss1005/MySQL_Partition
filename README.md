@@ -60,8 +60,12 @@
 ## 📊 데이터 선정 및 분석
 
 ### 1. 데이터 선정 과정
+<br>
 
-- #### 데이터 선정 기준
+<details>
+ 
+<summary><strong> 데이터 선정 기준</strong></summary>
+  <br>
   
   - **데이터 크기**   <br>
   성능 실험에 유의미한 수준의 데이터량을 갖춘 데이터셋 사용
@@ -76,12 +80,16 @@
   <br>
   
   - **다양한 데이터 타입**   <br>
-    RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 실습할 수 있도록 구서
+    RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 실습할 수 있도록 구성
   <br>
-
-
-
-- #### 데이터 레퍼런스 사이트
+</details>
+  
+  <br>
+  
+<details>
+ 
+<summary><strong> 데이터 레퍼런스 사이트</strong></summary>
+  <br>
   
   - **Kaggle** <br>
     https://www.kaggle.com/datasets
@@ -97,12 +105,19 @@
 
   - **공공 데이터 포털** <br>
     https://www.data.go.kr/
- <br>
 
- - #### 데이터 선정
+ </details>
+  <br>
+  
+<details>
+<summary><strong> 데이터 선정 </strong></summary>
+  <br>
+  
   - **Kaggle - Spotify Tracks Attributes and Popularity** <br>
     https://www.kaggle.com/datasets/melissamonfared/spotify-tracks-attributes-and-popularity
-
+ 
+ </details>
+ 
 <br><br>
 ### 2. 데이터 분석
 
@@ -113,8 +128,60 @@
 
 
 ### 3. 데이터 임포트
-#### 방법 1: CREATE TABLE → CSV import
-#### 방법 2: DBeaver 자동 테이블 생성
+
+
+
+#### 방법 1 : CREATE TABLE → CSV import [정석]
+
+<details>
+   <summary><strong>  📄 TABLE 생성 코드</strong></summary>
+
+  <pre><code>
+  CREATE TABLE spotify_songs (
+  id INT,
+  track_id VARCHAR(22),
+  artists VARCHAR(600),
+  album_name VARCHAR(300),
+  track_name VARCHAR(600),
+  popularity INT,
+  duration_ms INT,
+  explicit TINYINT(1) CHECK (explicit IN (0, 1)),  -- BOOLEAN도 가능
+  danceability FLOAT,
+  energy FLOAT,
+  key_col INT,
+  loudness FLOAT,
+  mode_col INT,
+  speechiness FLOAT,
+  acousticness FLOAT,
+  instrumentalness FLOAT,
+  liveness FLOAT,
+  valence FLOAT,
+  tempo FLOAT,
+  time_signature INT,
+  track_genre VARCHAR(50)
+);
+  </code></pre>
+
+</details>
+<br>
+
+- 데이터 타입과 제약조건을 명확히 정의할 수 있어 <strong>스키마 일관성과 무결성</strong>을 확보할 수 있음
+<br><br>
+- 예약어 및 컬럼명 충돌을 사전에 방지할 수 있어 <strong>이식성과 유지보수성</strong>이 향상됨
+<br><br>
+- Import 과정에서 오류 발생 시 <strong>문제의 원인 추적 및 해결</strong>할 수 있음
+<br><br>
+- 실무 환경에서는 스키마 설계와 데이터 적재 프로세스를 <strong>명확히 분리</strong>하는 것이 일반적
+<br>
+<br>
+
+#### 방법 2 : DBeaver 자동 테이블 생성
+
+- 제약조건을 설정할 수 없어, <strong>데이터의 정합성과 무결성을 보장하기 어려움</strong>
+<br><br>
+- 데이터 설계와 적재가 분리되지 않으면 <strong>데이터 품질 저하, 유지보수의 복잡성 증가, 시스템 안정성 저하</strong> 등의 문제가 발생할 수 있음
+<br><br>
+
 
 ---
 
