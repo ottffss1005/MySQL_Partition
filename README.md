@@ -11,18 +11,24 @@
 <br>
 
 # ⚓ 방향성 설정
-- #### 파티션이란? <br>
-  논리적으로 하나의 테이블이지만, 물리적으로는 여러개의 파티션으로 나뉘어 데이터들이 각각의 세그먼트에 저장되는 테이블<br><br>
-- #### 단순 개념 학습을 넘어서, 파티션의 실질적 효과를 눈으로 확인하고 체감하는 것을 출발점으로 삼았습니다.
-<br><br>
+ ### ❓ 파티션이란 <br>
+  논리적으로 하나의 테이블이지만<br>
+  물리적으로는 여러개의 파티션으로 나뉘어 데이터들이 각각의 세그먼트에 저장되는 테이블<br>
+  
+**파티셔닝의 개념을 이론에만 그치지 않고, 실제 성능에 미치는 효과를 정량적으로 분석하고자 하였습니다.** <br>
+**나아가 성능 최적화를 위한 확장 기법을 적용하며, 파티션 설계의 전략적 활용 가능성을 실무 관점에서 모색하였습니다.**
+<br> <br>
 
 # 🎯 프로젝트 목표
 <br>
 
-파티셔닝의 개념을 실습 중심으로 이해하고 **성능 향상 효과를 직접 확인하는 것**이 목표입니다.<br><br>
+파티션은 대용량 데이터 처리 환경에서 **성능 최적화를 위한 핵심 전략**으로 작용합니다. <br>
+<br>
+본 프로젝트에서는 **외부 데이터를 기반으로 파티션을 설계**하고 쿼리 성능 개선을 목적으로 **인덱스 전략을 병행 적용**했습니다. <br>
+<br>
+이를 통해 **데이터 액세스 범위 축소 및 파티션 프루닝 효과를 직접 검증**하며 파티션이 실질적으로 미치는 영향을 체계적으로 분석하였습니다.
 
-외부 데이터를 기반으로 파티셔닝을 적용하고 **인덱스를 병행해 효율을 극대화**하는 과정을 경험했습니다.
-<br><br>
+<br>
 
 ---
 
@@ -31,8 +37,12 @@
 | 구분 | 내용 |
 |------|------|
 | 데이터셋 | Kaggle - Spotify Tracks Attributes and Popularity |
+| 데이터 출처 | https://www.kaggle.com/datasets/melissamonfared/spotify-tracks-attributes-and-popularity |
 | DB | MySQL (DBeaver) |
-| 테이블 규모 | 약 11만 건 |
+| 테이블 규모 | 약 11만 4천 건 |
+
+<br>
+
 ---
 
 
@@ -49,52 +59,56 @@
 
 ## 📊 데이터 선정 및 분석
 
-### 1. 선정 과정 및 이유
-- #### 데이터 크기
+### 1. 데이터 선정 과정
+
+- #### 데이터 선정 기준
+  
+  - **데이터 크기**   <br>
   성능 실험에 유의미한 수준의 데이터량을 갖춘 데이터셋 사용
   <br>
   
-- #### 정제된 데이터
+  - **정제된 데이터**   <br>
   전처리 부담이 적은 정제된 데이터셋을 사용하여 파티션 과정에 집중할 수 있도록 구성
   <br>
-
-- #### 다양한 컬럼 수
-  파티션 기준을 유연하게 설계하고 다양한 방식의 실험 및 최적화가 가능하도록 구성
-  <br>
-
-- #### 다양한 데이터 타입
-  RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 실습할 수 있도록 구서
-  <br>
-  <br>
-
   
+  - **다양한 컬럼 수**   <br>
+    파티션 기준을 유연하게 설계하고 다양한 방식의 실험 및 최적화가 가능하도록 구성
+  <br>
+  
+  - **다양한 데이터 타입**   <br>
+    RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 실습할 수 있도록 구서
+  <br>
+
+
+
+- #### 데이터 레퍼런스 사이트
+  
+  - **Kaggle** <br>
+    https://www.kaggle.com/datasets
+  
+  - **금융감독원 - 금융상품한눈에** <br>
+    https://finlife.fss.or.kr/finlife/api/fncCoApi/list.do?menuNo=700051
+     
+  - **데이터허브** <br>
+    https://datahub.io/
+
+  - **UCL Machine Lerning Repository** <br>
+    https://archive.ics.uci.edu/
+
+  - **공공 데이터 포털** <br>
+    https://www.data.go.kr/
+ <br>
+
+ - #### 데이터 선정
+  - **Kaggle - Spotify Tracks Attributes and Popularity** <br>
+    https://www.kaggle.com/datasets/melissamonfared/spotify-tracks-attributes-and-popularity
+
+<br><br>
 ### 2. 데이터 분석
 
-<table>
-  <tr>
-    <td>
-      <img width="332" height="612" alt="Image" src="https://github.com/user-attachments/assets/952a5062-103b-4013-9c6e-60c778011955" />
-    </td>
-    <td style="vertical-align: top; padding-left: 20px;">
-      
-      <strong> 주요 컬럼 분석 </strong><br> <br>
-
-      <strong> popularity : </strong> 점수별 곡 개수  <br>
-          0~100의 값 다양성 : 구간 나누기 최적 컬럼  <br> <br>
-      
-      <strong> tack_genre : </strong> 곡 장르  <br>
-      문자형 컬럼이지만 값이 일정 범위이며  <br> 
-          범주형 데이터로 그룹화에 적합  <br> <br>
-      
-      <strong> explicit : </strong> 욕설 포함 여부  <br>
-      분포는 단순하지만 휴해 콘텐츠 필터링 등의 <br> 
-          실용적 목적이 분명해 서브파티션에 적합  <br> <br>
-      
-      <br>
-    </td>
-  </tr>
-</table>
-
+- 🗒️ 주요 컬럼 분석
+  
+<img width="623" height="592" alt="스크린샷 2025-07-12 150548" src="https://github.com/user-attachments/assets/ec86dad2-b03d-493d-87b6-f2e58f2f8bdd" />
 
 
 
