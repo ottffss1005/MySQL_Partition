@@ -594,7 +594,7 @@ SUBPARTITIONS 8 (
 
 <br><br>
 ---
-
+<br><br>
 
 # 🚀 확장 개념 - 인덱스 (Index)
 
@@ -602,10 +602,14 @@ SUBPARTITIONS 8 (
 데이터가 많아질수록 **단순 파티션만으로는 한계에 도달**하게 됩니다.  
 그래서 더 나은 성능을 위해 인덱스를 함께 도입하였습니다.
 
+<br>
+
 ### 📌 파티셔닝 + 인덱스 = 성능 극대화
 
 - **파티셔닝**은 데이터를 물리적으로 나눠서 불필요한 범위를 건너뛸 수 있게 하고,  
 - **인덱스**는 원하는 값을 트리 구조로 빠르게 찾아주는 역할을 합니다.
+
+<br>
 
 둘을 함께 사용하면:
 
@@ -620,6 +624,8 @@ SUBPARTITIONS 8 (
 
 인덱스는 데이터베이스에서 특정 데이터를 빠르게 찾기 위해 **색인**처럼 작동하는 구조입니다.  
 MySQL에서는 주로 **B-Tree (또는 B+Tree)** 기반 인덱스를 사용하며, 다음과 같은 구조적 특징이 있습니다:
+<br>
+
 
 | 항목 | 설명 |
 |------|------|
@@ -649,10 +655,12 @@ WHERE track_genre = 'pop' artists='Arko' ORDER BY track_name desc limit 10;
 - ✅ Explain 결과
 <img width="734" height="60" alt="image" src="https://github.com/user-attachments/assets/e0aaeef5-e166-472d-80ee-572deb4fae88" />
 
+
 ---
 
 
 # 💭 결론
+
 
 ### 실행 시간 비교
 <img width="807" height="130" alt="image (1)" src="https://github.com/user-attachments/assets/d823cbab-af74-4082-9926-4b317bb56f5c" />
@@ -720,6 +728,8 @@ SHOW PROFILE CPU FOR QUERY 2;
 
 ✅ 실행 시간은 "사용자가 체감하는 전체 처리 시간"  
 ✅ CPU 시간은 "CPU가 실제 일한 시간"
+
+<br>
 
 ## ✨ 결론
 
