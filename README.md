@@ -32,7 +32,7 @@
 
 ---
 
-## 📁 프로젝트 개요
+# 📁 프로젝트 개요
 
 | 구분 | 내용 |
 |------|------|
@@ -45,19 +45,18 @@
 
 ---
 
-
-## 📂 목차
+# 📂 목차
 
 1. [📊 데이터 선정 및 분석](#-데이터-선정-및-분석)
 2. [⚙️ 파티션 실행](#️-파티션-실행)
-3. [🚀 확장 개념 - 인덱스](#-확장-개념---인덱스)
+3. [🚀 확장 개념 - 인덱스](#-확장-개념---인덱스 (Index))
 4. [🧨 트러블슈팅](#-트러블슈팅)
 5. [🪞 회고 및 디벨롭 방향](#-회고-및-디벨롭-방향)
 
 ---
 
 
-## 📊 데이터 선정 및 분석
+# 📊 데이터 선정 및 분석
 
 ### 1. 데이터 선정 과정
 <br>
@@ -80,7 +79,7 @@
   <br>
   
   - **다양한 데이터 타입**   <br>
-    RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 실습할 수 있도록 구성
+    RANGE / LIST / HASH 등 다양한 파티셔닝 전략을 진행할 수 있도록 구성
   <br>
 </details>
   
@@ -185,7 +184,7 @@
 
 ---
 
-## ⚙️ 파티션 실행
+# ⚙️ 파티션 실행
 
 ## ⭐단일 파티션 1 - RANGE 파티션(popularity)
 
@@ -281,10 +280,10 @@ SELECT * FROM spotify;
 | `p_21_40`      | 21 이상 41 미만             | 낮은 중간 |
 | `p_41_60`      | 41 이상 61 미만             | 평균 수준 |
 | `p_61_80`      | 61 이상 81 미만             | 중상위 곡 |
-| `p_81_100`     | 81 이상 101 미만            | 인기 곡 |
-| `p_max`        | 101 이상                    | 예외 값 또는 오류 대비 |
+| `p_max`        | 81 이상 101 미만            | 인기 곡 |
 
-→ 총 6개의 파티션으로 구성되어 있으며,  
+
+→ 총 5개의 파티션으로 구성되어 있으며,  
 `popularity` 값에 따라 해당 파티션에 자동으로 분류됩니다.
 
 #### 🔍 활용 예시
@@ -350,14 +349,18 @@ PARTITION BY LIST COLUMNS(track_genre) (
 
 #### 🎯 데이터 파티셔닝 전략
 
-- 곡의 `track_genre` 컬럼을 기준으로 **LIST 파티셔닝**,  
-`id` 컬럼을 기준으로 **HASH 서브파티셔닝**을 적용한 테이블을 설계하였습니다.
+- `track_genre` 컬럼을 기준으로 **LIST 파티셔닝**을 적용하여,  
+장르별로 데이터를 분산하고 분석 쿼리의 성능을 높이는 구조를 설계하였습니다.
 <br>
 
 #### 💡 파티셔닝 목적
 
-- 트랙 장르별 분석(예: 락, 힙합, 재즈 등)을 효율적으로 수행하기 위해 `track_genre` 기준으로 논리적 분할
-- 서브파티션으로 `id`에 `HASH`를 적용하여 **병렬 처리 및 균형 있는 데이터 분산** 가능
+- 곡의 장르는 추천 시스템, 사용자 취향 분석, 시장 동향 파악 등에 매우 중요한 요소입니다.
+- `track_genre`에 따라 LIST 파티셔닝을 적용함으로써
+  - 특정 장르에 대한 조회 성능 향상
+  - 장르별 집계/통계의 간소화
+  - 데이터 관리(예: 장르별 삭제/이관)의 용이성
+  을 기대할 수 있습니다.
 <br>
 
 #### 🧱 파티션 구성 예시
@@ -383,9 +386,12 @@ PARTITION BY LIST COLUMNS(track_genre) (
 
 #### 🔍 활용 예시
 
-- 특정 장르 분석 시 빠른 조회 가능  
+- 특정 장르 인기곡 조회  
   ```sql
-  SELECT * FROM spotify_songs_partitioned WHERE track_genre = 'hip-hop';
+  SELECT track_name, popularity
+  FROM spotify_songs_partitioned
+  WHERE track_genre = 'rock';
+  
 <br><br>
 
 
@@ -589,19 +595,239 @@ SUBPARTITIONS 8 (
 <br><br>
 ---
 
-## 🚀 확장 개념 - 인덱스
 
-- 파티셔닝과 인덱싱 차이
-- 인덱스 적용 전후 성능 비교
-- 파티션 프루닝 설명
+# 🚀 확장 개념 - 인덱스 (Index)
+
+파티셔닝만으로도 조회 성능을 크게 개선할 수 있지만,  
+데이터가 많아질수록 **단순 파티션만으로는 한계에 도달**하게 됩니다.  
+그래서 더 나은 성능을 위해 인덱스를 함께 도입하였습니다.
+
+### 📌 파티셔닝 + 인덱스 = 성능 극대화
+
+- **파티셔닝**은 데이터를 물리적으로 나눠서 불필요한 범위를 건너뛸 수 있게 하고,  
+- **인덱스**는 원하는 값을 트리 구조로 빠르게 찾아주는 역할을 합니다.
+
+둘을 함께 사용하면:
+
+✅ **파티션 프루닝**으로 범위를 좁힌 뒤  
+✅ **인덱스를 통해 해당 파티션 내부에서 빠르게 탐색**
+
+> 📈 결과적으로 디스크 I/O를 줄이고, 대용량에서도 **검색 응답 속도가 획기적으로 개선**됩니다.
 
 ---
 
-## 🧨 트러블슈팅
+### 🌲 인덱스란?
 
-- 데이터 타입, 예약어 충돌, BOOLEAN 처리 등
-- 파티션 조건 미일치 → INSERT 오류
-- 파티션 프루닝 안 되는 사례
+인덱스는 데이터베이스에서 특정 데이터를 빠르게 찾기 위해 **색인**처럼 작동하는 구조입니다.  
+MySQL에서는 주로 **B-Tree (또는 B+Tree)** 기반 인덱스를 사용하며, 다음과 같은 구조적 특징이 있습니다:
+
+| 항목 | 설명 |
+|------|------|
+| **B-Tree** | 모든 노드에 데이터 존재. 삽입/검색/삭제 성능 일정 |
+| **B+Tree** | 실제 데이터는 리프 노드에만 저장. 리프 노드끼리 연결되어 있어 **범위 검색에 유리** |
+| **인덱스 생성 위치** | 자주 조회하는 컬럼 (예: `track_genre`, `popularity`, `explicit`) |
+| **복합 인덱스** | 두 개 이상의 컬럼에 인덱스를 적용할 수도 있음 (예: `CREATE INDEX idx_genre_pop ON table(track_genre, popularity);`) |
+
+---
+
+### 🧪 인덱스 생성 및 비교
+
+- ✅ 인덱스 생성 및 확인 쿼리
+  
+```sql
+-- 인덱스 생성
+CREATE INDEX idx_genre_artist ON spotify_songs_partitioned (track_genre, artists);
+
+-- 파티션과 인덱스 키가 올바르게 쓰이고 있는지 확인하는 코드
+Explain
+SELECT track_name, popularity 
+FROM spotify_songs_partitioned
+WHERE track_genre = 'pop' artists='Arko' ORDER BY track_name desc limit 10;
+
+```
+
+- ✅ Explain 결과
+<img width="734" height="60" alt="image" src="https://github.com/user-attachments/assets/e0aaeef5-e166-472d-80ee-572deb4fae88" />
+
+
+
+---
+
+# 💭 결론
+
+### 실행 시간 비교
+<img width="807" height="130" alt="image (1)" src="https://github.com/user-attachments/assets/d823cbab-af74-4082-9926-4b317bb56f5c" />
+
+### CPU 시간 비교
+
+```sql
+-- 1. 프로파일링 기능 켜기
+SET profiling = 1;
+
+-- 2. 첫 번째 쿼리 실행
+SELECT * FROM spotify
+WHERE popularity BETWEEN 61 AND 80;
+
+-- 3. 두 번째 쿼리 실행
+SELECT * FROM spotify_partitioned_indexed
+WHERE popularity BETWEEN 61 AND 80;
+
+-- 4. 실행된 쿼리 목록 보기
+SHOW PROFILES;
+
+-- 5. 각 쿼리의 CPU 시간 상세 보기
+SHOW PROFILE CPU FOR QUERY 1;
+SHOW PROFILE CPU FOR QUERY 2;
+```
+### 📊 실행 시간 vs CPU 시간 비교
+
+#### 🟦 1. 원본 테이블 (`spotify`)
+
+| 단계 | Duration (s) | CPU User (s) | CPU System (s) |
+| --- | --- | --- | --- |
+| starting | 0.000385 | 0.000379 | 0.000000 |
+| executing | 0.005758 | 0.005922 | 0.000000 |
+| 기타 단계 합계 | 0.000687 | 0.000632 | 0.000000 |
+| **총합** | **0.006830** | **0.006933** | **0.000000** |
+|  |  |  |  |
+
+#### 🟩 2. 파티셔닝 테이블 (`spotify_partitioned`)
+
+| 단계 | Duration (s) | CPU User (s) | CPU System (s) |
+| --- | --- | --- | --- |
+| starting | 0.000096 | 0.000063 | 0.000028 |
+| executing | 0.001138 | 0.001139 | 0.000000 |
+| 기타 단계 합계 | 0.000246 | 0.000193 | 0.000104 |
+| **총합** | **0.001480** | **0.001395** | **0.000132** |
+
+
+
+#### 🟨 3. 파티셔닝 + 인덱스 테이블 (`spotify_partitioned_indexed`)
+
+| 단계 | Duration (s) | CPU User (s) | CPU System (s) |
+| --- | --- | --- | --- |
+| starting | 0.000081 | 0.000053 | 0.000023 |
+| executing | 0.001793 | 0.001797 | 0.000000 |
+| 기타 단계 합계 | 0.000456 | 0.000379 | 0.000074 |
+| **총합** | **0.002330** | **0.002229** | **0.000097** |
+
+
+
+| 항목 | 실행 시간 (`Duration`) | CPU 시간 |
+| --- | --- | --- |
+| 정의 | 쿼리 시작부터 끝까지 걸린 전체 시간 (벽시계 기준) | 실제로 CPU가 연산한 시간 |
+| 포함 | 대기 시간, I/O, 락, CPU | 오직 계산/처리한 시간만 |
+| 예시 | 10초 (느린 쿼리지만 CPU는 1초만 사용) | 1초 (CPU 효율은 높음) |
+
+✅ 실행 시간은 "사용자가 체감하는 전체 처리 시간"  
+✅ CPU 시간은 "CPU가 실제 일한 시간"
+
+## ✨ 결론
+
+
+- 🔵 **RANGE 파티셔닝만 적용한 테이블이 가장 빠르고 CPU 사용량도 가장 적음**
+  - → 쿼리 조건(`WHERE popularity >= 60`)이 파티션 키에 포함되므로, **파티션 프루닝(Pruning)** 덕분에 검색 범위가 좁아짐
+
+- 🟡 인덱스를 추가했을 경우, 오히려 **CPU 사용량이 증가**
+  - → 이유: 파티션 내에서 **인덱스 탐색**이라는 추가 작업이 발생하기 때문
+  - → 단, **데이터 양이 매우 클 경우엔** 인덱스 + 파티션 조합이 유리할 수 있음
+
+- ⚪ 원본 테이블은 파티션/인덱스 없이 **풀스캔(Full Table Scan)**
+  - → CPU 시간과 실행 시간이 모두 가장 큼
+
+
+
+### ✅ 최적 전략 (쿼리 조건 중심 판단)
+
+> 📌 **인기도(popularity)처럼 구간 기반 조건이 자주 사용되는 컬럼의 경우:**
+
+👉 `RANGE 파티셔닝만 적용`하는 것이  
+→ **CPU 자원 소모도 적고 전체 실행 시간도 가장 효율적**
+
+---
+
+# 🧨 트러블슈팅 (Troubleshooting)
+
+데이터 수집 → 테이블 설계 → 파티셔닝까지 진행하는 과정에서 발생한 주요 이슈들과  
+그에 대한 해결 과정을 정리했습니다.
+
+
+
+## 📥 Import 과정
+
+### (1) CSV 컬럼 타입/크기 미정
+
+- **TROUBLE**  
+  CSV 데이터의 각 필드 길이를 알 수 없어 `VARCHAR` 크기 설정에 어려움 발생
+
+- **SOLUTION**  
+  ChatGPT에 CSV 파일을 전달해 각 컬럼의 **최대 문자열 길이**를 추출한 후,  
+  그 결과를 바탕으로 적절한 `VARCHAR(n)` 크기로 설계
+
+
+### (2) 예약어 컬럼명 충돌
+
+- **TROUBLE**  
+  `INDEX`, `KEY`, `MODE`는 SQL 예약어이므로 컬럼명으로 사용할 수 없음 → 오류 발생
+
+- **SOLUTION**  
+  CSV 필드명을 다음과 같이 리네이밍 후 테이블 및 CSV 모두 일치시킴
+
+| 원래 필드명 | 변경 컬럼명 |
+|-------------|-------------|
+| index       | id          |
+| key         | key_col     |
+| mode        | mode_col    |
+
+
+## 🧩 파티셔닝 과정
+
+### (1) HASH 파티셔닝 실패
+
+- **TROUBLE**  
+  `track_id`(VARCHAR)를 서브파티션 키로 사용하려고 했을 때 오류 발생  
+  > `SQL Error [1491] [HY000]: The SUBPARTITION function returns the wrong type`
+
+- **원인**  
+  `HASH 파티셔닝`은 **정수형 컬럼(INT)** 만 사용할 수 있음
+
+- **SOLUTION**  
+  `track_id` 대신 `id(INT)` 컬럼을 서브파티션 키로 사용
+
+
+
+### (2) LIST 파티셔닝 insert 오류
+
+- **TROUBLE**  
+  `track_genre` 기준으로 LIST 파티션을 만들고 insert 시 아래와 같은 오류 발생  
+  > `SQL Error [1526] [HY000]: Table has no partition for value from column_list`
+
+- **원인**  
+  INSERT하려는 `track_genre` 값이 파티션 정의에 포함되지 않았거나,  
+  대/소문자, 공백, 하이픈 등의 차이로 인해 **정의된 값과 불일치**
+
+- **SOLUTION**  
+  INSERT 전 `track_genre` 값을 **소문자화 + 공백 제거 + 파티션 조건과 일치하도록 전처리**
+
+<details>
+<summary><strong>✅ INSERT 전 정제 쿼리 (클릭해서 열기)</strong></summary>
+
+```sql
+SELECT
+  id, track_id, artists, album_name, track_name, popularity,
+  duration_ms, explicit, danceability, energy, key_col, loudness,
+  mode_col, speechiness, acousticness, instrumentalness, liveness,
+  valence, tempo, time_signature,
+  LOWER(TRIM(track_genre)) AS track_genre
+FROM spotify
+WHERE track_genre IS NOT NULL
+  AND TRIM(track_genre) != ''
+  AND LOWER(TRIM(track_genre)) IN (
+    'pop', 'power-pop', 'rock', 'edm', 'hip-hop', 'jazz', 'metal',
+    'latin', 'ambient', 'children', 'folk', 'punk', 'trance', ...
+  );
+</details>
+
 
 ---
 
@@ -614,205 +840,5 @@ SUBPARTITIONS 8 (
 ---
 
 
-
-
-## 🔹 0. 파티션이란? 
-
-<img width="386" height="130" alt="image" src="https://github.com/user-attachments/assets/f1fc510d-f727-48fc-b01c-4f38a2492fcb" />
-<br>
-- 논리적으로는 하나의 테이블이지만 여러 개의 파티션으로 나뉘어 <br>
-  데이터들이 각각의 세그먼트에 저장되는 테이블
-- 파티션 키를 PRIMARY KEY 에 포함시켜야하며 파티션 키는 단일 컬럼만 가능하다.<br>
-⇒ 유일성 검사 시 어느 파티션을 봐야할 지 모르기때문에 빠른 탐색과 중복 여부 체크를 하기 위해 PRIMARY KEY를 포함시키기 위함 <br>
-<br><br>
-
-## 🔹 1. 데이터 수집 & 전처리
-
-- 파이썬으로 데이터 전처리 (문자에 무의미한 끈따옴표 등 삭제)
-- SQL 예약어(index, key 등)는 컬럼명(ID, KEY_COL)으로 수정
-- 불리언 필드는 0/1로 변환하여 `NUMBER(1)` 또는 `TINYINT(1)`로 매핑
-- 필드 최대 길이는 GPT 도구를 활용해 자동 분석하여 설계에 반영
- <br> <br>
-### 🛠 기본 과정: 데이터 타입 및 크기 지정
-
-<img width="600" height="260" alt="image (1)" src="https://github.com/user-attachments/assets/17deedac-9625-4725-b483-9add9267381b" />
-
-- DB에 저장하기 전, 각 컬럼의 타입과 최대 길이를 설계
-- CSV 데이터 특성상 **길이 예측이 어려워 사전 분석 필요**
-
-#### ⚠ 트러블슈팅
-
-- **TROUBLE**  
-  → 데이터 크기가 너무 커서 필드별 최대 길이를 알 수 없음
-
-- **SOLUTION**  
-  → ChatGPT에게 CSV 파일을 전달해 각 컬럼의 최대 길이를 자동 추출  
-  → 추출된 정보를 바탕으로 `VARCHAR(600)` 등 타입 및 크기 설계
-
-<br>
-
-### 📌 방법 1: TABLE 먼저 생성 후 CSV Import (정석 방식)
-
-<details>
-<summary> 🪟TABLE 생성 코드🪟 </summary>
-
-```CREATE TABLE spotify_songs (
-  id INT,
-  track_id VARCHAR(22),
-  artists VARCHAR(600),
-  album_name VARCHAR(300),
-  track_name VARCHAR(600),
-  popularity INT,
-  duration_ms INT,
-  explicit TINYINT(1) CHECK (explicit IN (0, 1)),  -- BOOLEAN도 가능
-  danceability FLOAT,
-  energy FLOAT,
-  key_col INT,
-  loudness FLOAT,
-  mode_col INT,
-  speechiness FLOAT,
-  acousticness FLOAT,
-  instrumentalness FLOAT,
-  liveness FLOAT,
-  valence FLOAT,
-  tempo FLOAT,
-  time_signature INT,
-  track_genre VARCHAR(50)
-);
-```
-</details>
-
-- 컬럼 타입, 제약조건을 **사전에 명확히 통제 가능**
-- 예약어 충돌 방지 및 import 실패 시 디버깅 용이
-- 실무에서는 **설계 → 적재 분리**가 일반적
-
-
-<br>
-
-### 📌 방법 2: DBeaver로 CSV Import + 자동 테이블 생성
-
-- 제약조건을 설정할 수 없기 때문에 데이터 정합성 확보가 어려움
-- 데이터 설계와 적재가 분리되지 않아 데이터 품질 저하, 유지보수 어려움, 시스템 안정성 저하의 문제가 발생할 수 있음
-<br><br>
-#### 요약
-
-| 항목 | 정석 방식 | 자동 생성 |
-|------|-----------|------------|
-| 타입 통제 | 가능 | 불가능 |
-| 제약조건 설정 | 가능 | 불가 |
-| 실무 사용 | 권장 | 비권장 |
----
-<br><br>
-
-#### ⚠️ 트러블슈팅 ⚠️
-
-- **TROUBLE**  
-  → 데이터 크기가 너무 커서 필드별 최대 길이를 알 수 없음
-
-- **SOLUTION**  
-  → ChatGPT에게 CSV 파일을 전달해 각 컬럼의 최대 길이를 자동 추출  
-  → 추출된 정보를 바탕으로 `VARCHAR(600)` 등 타입 및 크기 설계
-
----
-
-
-## 📊 Range Partition 결과
-
----
-
-### ✅ Partition 테이블 생성 및 활용
-
-
----
-
-### ⏱️ 쿼리 성능 측정 (실행 시간 기준)
-
-<details>
-<summary>📁 SQL 코드 보기</summary>
-
-```sql
--- 실행 시간 측정 (ms 단위)
-SET @start_original = CURRENT_TIMESTAMP(3);
-SELECT * FROM spotify WHERE popularity BETWEEN 60 AND 80;
-SET @end_original = CURRENT_TIMESTAMP(3);
-
-SET @start_partitioned = CURRENT_TIMESTAMP(3);
-SELECT * FROM spotify_partitioned WHERE popularity BETWEEN 60 AND 80;
-SET @end_partitioned = CURRENT_TIMESTAMP(3);
-
-SET @start_partitioned_indexed = CURRENT_TIMESTAMP(3);
-SELECT * FROM spotify_partitioned_indexed WHERE popularity BETWEEN 60 AND 80;
-SET @end_partitioned_indexed = CURRENT_TIMESTAMP(3);
-
--- 실행 시간 출력
-SELECT 
-  TIMESTAMPDIFF(MICROSECOND, @start_original, @end_original) / 1000 AS `원본_실행시간_ms`,
-  TIMESTAMPDIFF(MICROSECOND, @start_partitioned, @end_partitioned) / 1000 AS `RANGE_실행시간_ms`,
-  TIMESTAMPDIFF(MICROSECOND, @start_partitioned_indexed, @end_partitioned_indexed) / 1000 AS `RANGE+INDEX_실행시간_ms`;
-```
-
-</details>
-
-- 
-
-
----
-
-### 🔍 CPU 사용량 비교
-
-<details>
-<summary>📁 SQL 프로파일링 코드 보기</summary>
-
-```sql
--- 1. 프로파일링 기능 켜기
-SET profiling = 1;
-
--- 2. 쿼리 실행
-SELECT * FROM spotify WHERE popularity BETWEEN 61 AND 80;
-SELECT * FROM spotify_partitioned WHERE popularity BETWEEN 61 AND 80;
-SELECT * FROM spotify_partitioned_indexed WHERE popularity BETWEEN 61 AND 80;
-
--- 3. 실행된 쿼리 목록 확인
-SHOW PROFILES;
-
--- 4. CPU 사용 시간 상세 보기
-SHOW PROFILE CPU FOR QUERY 1;
-SHOW PROFILE CPU FOR QUERY 2;
-SHOW PROFILE CPU FOR QUERY 3;
-```
-
-</details>
-
----
-
-### 📊 CPU 사용량 비교 테이블
-
-| 🔍 구분                  | ⏱️ Duration (s) | 🧠 CPU User (s) | ⚙️ CPU System (s) | 🧾 총합 (s)     |
-|--------------------------|------------------|------------------|--------------------|------------------|
-| 🔵 원본 테이블           | 0.006830         | 0.006933         | 0.000000           | **0.006933**     |
-| 🟩 파티셔닝만 적용       | 0.001480         | 0.001395         | 0.000132           | **0.001527**     |
-| 🟨 파티셔닝 + 인덱스 적용 | 0.002330         | 0.002229         | 0.000097           | **0.002326**     |
-
----
-
-### 📌 실행 시간 vs CPU 시간 차이
-
-| 항목       | 실행 시간 (`Duration`)           | CPU 시간 (`CPU_user` + `CPU_system`)     |
-|------------|----------------------------------|-------------------------------------------|
-| 정의       | 쿼리 실행에 걸린 전체 시간        | 실제 연산에 소요된 CPU 시간                |
-| 포함 요소  | I/O, 락, 대기 시간 포함           | 순수 계산 시간                            |
-| 중요성     | 사용자 체감 성능 지표             | 서버 자원 최적화 지표                     |
-
----
-
-### ✅ 결론 및 추천 전략
-
-> **BETWEEN / 범위 조건 쿼리**를 자주 사용하는 경우:
-
-- 🟩 `Range 파티셔닝만 적용`하는 것이 가장 효과적이다.
-
-- 🟨 인덱스는 꼭 필요한 경우에만 고려한다.
-
-> 💡 쿼리 속도뿐만 아니라 **CPU 사용량도 함께 고려**하여 파티셔닝 전략을 수립해야 한다.
 
 
