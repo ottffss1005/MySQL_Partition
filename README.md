@@ -121,8 +121,9 @@
 ### 2. 데이터 분석
 
 - 🗒️ 주요 컬럼 분석
-  
-<img width="618" height="585" alt="image" src="https://github.com/user-attachments/assets/bba62f29-f4a5-4138-9536-fb3ceb02f9d0" />
+- 
+<img width="621" height="582" alt="image" src="https://github.com/user-attachments/assets/703ea002-33bd-4034-80af-c5950b445c01" />
+
 
 
 
