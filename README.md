@@ -661,13 +661,14 @@ WHERE track_genre = 'pop' artists='Arko' ORDER BY track_name desc limit 10;
 ---
 
 
-# 💭 결론
+# 💭 인사이트
 
 
-### 실행 시간 비교
-<img width="807" height="130" alt="image (1)" src="https://github.com/user-attachments/assets/d823cbab-af74-4082-9926-4b317bb56f5c" />
+<details>
+<summary><strong>
+📁 CPU 시간 비교코드
+</strong></summary> 
 
-### CPU 시간 비교
 
 ```sql
 -- 1. 프로파일링 기능 켜기
@@ -688,6 +689,9 @@ SHOW PROFILES;
 SHOW PROFILE CPU FOR QUERY 1;
 SHOW PROFILE CPU FOR QUERY 2;
 ```
+
+</details>
+
 ### 📊 실행 시간 vs CPU 시간 비교
 
 #### 🟦 1. 원본 테이블 (`spotify`)
