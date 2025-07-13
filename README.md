@@ -826,6 +826,7 @@ WHERE track_genre IS NOT NULL
     'pop', 'power-pop', 'rock', 'edm', 'hip-hop', 'jazz', 'metal',
     'latin', 'ambient', 'children', 'folk', 'punk', 'trance', ...
   );
+```
 </details>
 
 
